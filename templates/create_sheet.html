@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <div class="header-content">
+            <h1>Create New Attendance Sheet</h1>
+            <div class="header-actions">
+                <a href="{{ url_for('root') }}" class="btn">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="create-sheet-form">
+        <form action="{{ url_for('create_sheet') }}" method="POST">
+            <div class="form-group">
+                <label for="subject_id"><i class="fas fa-book"></i> Subject:</label>
+                <div class="select-wrapper">
+                    <select name="subject_id" id="subject_id" required class="form-select">
+                        <option value="">Select a subject</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}">{{ subject.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="date"><i class="fas fa-calendar-alt"></i> Date:</label>
+                <input type="date" id="date" name="date" value="{{ today_date }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="time"><i class="fas fa-clock"></i> Time:</label>
+                <input type="time" id="time" name="time" value="{{ current_time }}" required>
+            </div>
+
+            <button type="submit" class="btn create-btn">
+                <i class="fas fa-plus"></i> Create Sheet
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #FF6B6B;  /* Coral */
+    --secondary-color: #4CAF50;  /* Green */
+    --accent-color: #FFA726;  /* Orange */
+    --success-color: #4CAF50;  /* Green */
+    --danger-color: #FF5252;  /* Red */
+    --warning-color: #FFA726;  /* Orange */
+    --background-color: #FFE4E1;  /* Misty Rose - Soft Pastel Pink */
+    --card-background: #FFFFFF;
+    --text-color: #2C3E50;
+    --text-light: #7F8C8D;
+    --border-color: #FFB6C1;  /* Light Pink */
+    --border-radius: 12px;
+    --box-shadow: 0 4px 6px rgba(255, 107, 107, 0.1);
+    --transition: all 0.3s ease;
+}
+
+body {
+    background-color: var(--background-color) !important;
+    color: var(--text-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.header {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+}
+
+.header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h1 {
+    color: var(--text-color);
+    margin: 0;
+    font-size: 2.2em;
+    font-weight: 700;
+    background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.create-sheet-form {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: 30px;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: black;
+    font-weight: 500;
+}
+
+.form-group label i {
+    color: var(--primary-color);
+}
+
+.select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.form-select {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--card-background);
+    color: black;
+    cursor: pointer;
+    -webkit-appearance: button;
+    appearance: button;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+}
+
+.form-select:hover {
+    border-color: var(--primary-color);
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--card-background);
+    color: black;
+    transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+    outline: none;
+}
+
+.btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+    font-weight: 500;
+    font-size: 0.95em;
+}
+
+.create-btn {
+    background: var(--primary-color);
+    color: black;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 107, 107, 0.1);
+    opacity: 0.9;
+}
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %} 

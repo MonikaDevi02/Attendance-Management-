@@ -1,0 +1,719 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <div class="header-content">
+            <h1>Attendance Management System</h1>
+            <div class="header-actions">
+                <div class="current-time">
+                    <i class="fas fa-calendar"></i>
+                    <p>{{ today_date }}</p>
+                    <i class="fas fa-clock"></i>
+                    <p>{{ current_time }}</p>
+                </div>
+                <a href="{{ url_for('create_sheet') }}" class="btn create-btn">
+                    <i class="fas fa-plus"></i> Create New Sheet
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="subject-section">
+        <div class="section-header">
+            <h2><i class="fas fa-book"></i> Enter Subject Details</h2>
+        </div>
+        <div class="subject-form-container">
+            <form action="{{ url_for('add_subject') }}" method="POST" class="subject-form">
+                <div class="form-group">
+                    <div class="input-group">
+                        <i class="fas fa-book-open"></i>
+                        <div class="subject-input-wrapper">
+                            <input type="text" 
+                                   name="subject_name" 
+                                   id="subject_input" 
+                                   placeholder="Enter subject name" 
+                                   autocomplete="off"
+                                   required>
+                            <div class="subject-suggestions" id="subject_suggestions">
+                                {% for subject in subjects %}
+                                <div class="suggestion-item" onclick="selectSubject('{{ subject.name }}')">
+                                    <span class="subject-name">{{ subject.name }}</span>
+                                    <a href="{{ url_for('delete_subject', subject_id=subject.id) }}" 
+                                       class="delete-btn" 
+                                       onclick="return confirm('Are you sure you want to delete this subject?')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn add-btn">
+                        <i class="fas fa-plus"></i> Add Subject
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="main-content">
+        {% if selected_subject %}
+        <div class="attendance-section">
+            <h2><i class="fas fa-clipboard-list"></i> Create Attendance Sheet</h2>
+            <form action="{{ url_for('create_sheet') }}" method="POST" class="attendance-form">
+                <input type="hidden" name="subject_id" value="{{ selected_subject.id }}">
+                <div class="form-group">
+                    <label for="date"><i class="fas fa-calendar-alt"></i> Date:</label>
+                    <input type="date" id="date" name="date" value="{{ today_date }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="time"><i class="fas fa-clock"></i> Time:</label>
+                    <input type="time" id="time" name="time" value="{{ current_time }}" required>
+                </div>
+                <button type="submit" class="btn create-btn">
+                    <i class="fas fa-plus"></i> Create Sheet
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
+        <div class="recent-sheets">
+            <h2><i class="fas fa-history"></i> Recent Attendance Sheets</h2>
+            {% if recent_sheets %}
+            <div class="sheets-table-container">
+                <table class="sheets-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-book"></i> Subject</th>
+                            <th><i class="fas fa-calendar"></i> Date</th>
+                            <th><i class="fas fa-clock"></i> Time</th>
+                            <th><i class="fas fa-cogs"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sheet in recent_sheets %}
+                        <tr>
+                            <td>{{ sheet.subject.name }}</td>
+                            <td>{{ sheet.date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ sheet.time.strftime('%H:%M') }}</td>
+                            <td class="action-buttons">
+                                <a href="{{ url_for('view_sheet', sheet_id=sheet.id) }}" class="btn view-btn">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <a href="{{ url_for('delete_sheet', sheet_id=sheet.id) }}" class="btn delete-btn" onclick="return confirm('Are you sure you want to delete this sheet?')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-sheets">
+                <i class="fas fa-clipboard-list"></i>
+                <p>No attendance sheets found.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #FF6B6B;  /* Coral */
+    --secondary-color: #4CAF50;  /* Green */
+    --accent-color: #FFA726;  /* Orange */
+    --success-color: #4CAF50;  /* Green */
+    --danger-color: #FF5252;  /* Red */
+    --warning-color: #FFA726;  /* Orange */
+    --background-color: #FFE4E1;  /* Misty Rose - Soft Pastel Pink */
+    --card-background: #FFFFFF;
+    --text-color: #2C3E50;
+    --text-light: #7F8C8D;
+    --border-color: #FFB6C1;  /* Light Pink */
+    --border-radius: 12px;
+    --box-shadow: 0 4px 6px rgba(255, 107, 107, 0.1);
+    --transition: all 0.3s ease;
+}
+
+body {
+    background-color: var(--background-color) !important;  /* Using !important to override other styles */
+    color: var(--text-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.header {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+}
+
+.header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h1 {
+    color: var(--text-color);
+    margin: 0;
+    font-size: 2.2em;
+    font-weight: 700;
+    background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.current-time {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-light);
+    background: rgba(255, 107, 107, 0.1);
+    padding: 10px 15px;
+    border-radius: var(--border-radius);
+}
+
+.current-time i {
+    color: var(--primary-color);
+}
+
+.main-content {
+    display: grid;
+    gap: 30px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h2 {
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.5em;
+    font-weight: 600;
+}
+
+.subject-form {
+    margin-bottom: 20px;
+}
+
+.form-group {
+    display: flex;
+    gap: 10px;
+}
+
+.form-group input {
+    flex: 1;
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--card-background);
+    color: black;
+    font-size: 1em;
+    transition: var(--transition);
+}
+
+.form-group input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+    outline: none;
+}
+
+.subjects-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.subject-card {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    transition: var(--transition);
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+}
+
+.subject-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+}
+
+.subject-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.subject-icon {
+    width: 45px;
+    height: 45px;
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.subject-icon i {
+    font-size: 1.3em;
+    color: var(--primary-color);
+}
+
+.subject-title {
+    flex: 1;
+}
+
+.subject-title h3 {
+    color: var(--text-color);
+    margin: 0 0 5px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.subject-count {
+    display: inline-block;
+    background: rgba(255, 107, 107, 0.1);
+    color: var(--primary-color);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.subject-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+}
+
+.subject-actions .btn {
+    flex: 1;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: var(--transition);
+}
+
+.subject-actions .btn i {
+    font-size: 1.1em;
+}
+
+.subject-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(255, 107, 107, 0.1);
+}
+
+.subject-card:hover .subject-icon {
+    background: var(--primary-color);
+}
+
+.subject-card:hover .subject-icon i {
+    color: white;
+}
+
+.attendance-section {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.attendance-form {
+    max-width: 400px;
+}
+
+.attendance-form .form-group {
+    margin-bottom: 20px;
+}
+
+.attendance-form label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: black;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.recent-sheets {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.sheets-table-container {
+    overflow-x: auto;
+    margin-top: 20px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.sheets-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.sheets-table th,
+.sheets-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    color: black;
+}
+
+.sheets-table th {
+    background: rgba(255, 107, 107, 0.05);
+    font-weight: 600;
+    color: black;
+}
+
+.sheets-table th i {
+    margin-right: 8px;
+    color: var(--primary-color);
+}
+
+.no-sheets {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-light);
+}
+
+.no-sheets i {
+    font-size: 3em;
+    margin-bottom: 20px;
+    color: var(--primary-color);
+}
+
+.btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+    font-weight: 500;
+    font-size: 0.95em;
+}
+
+.create-btn {
+    background: var(--primary-color);
+    color: black;
+}
+
+.view-btn {
+    background: var(--success-color);
+    color: black;
+}
+
+.delete-btn {
+    background: var(--danger-color);
+    color: black;
+}
+
+.add-btn {
+    background: var(--warning-color);
+    color: black;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 107, 107, 0.1);
+    opacity: 0.9;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .subjects-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .subject-card {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .subject-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+.subject-section {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.subject-form-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0 15px;
+}
+
+.input-group i {
+    font-size: 1.5em;
+    color: var(--primary-color);
+}
+
+.input-group input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 1.1em;
+    color: black;
+    padding: 10px;
+}
+
+.input-group input:focus {
+    outline: none;
+}
+
+.input-group input::placeholder {
+    color: black;
+    opacity: 0.7;
+}
+
+.subject-form .form-group {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 0;
+}
+
+.subject-form .btn {
+    padding: 15px 25px;
+    font-size: 1.1em;
+}
+
+.subject-input-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+.subject-suggestions {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.subject-suggestions.show {
+    display: block;
+}
+
+.suggestion-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.subject-name {
+    flex: 1;
+}
+
+.delete-btn {
+    color: #dc3545;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.suggestion-item:hover .delete-btn {
+    opacity: 1;
+}
+
+.delete-btn:hover {
+    color: #c82333;
+}
+
+#subject_input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1em;
+}
+
+#subject_input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
+}
+</style>
+
+<script>
+function toggleSubjectSuggestions(show) {
+    const suggestions = document.getElementById('subject_suggestions');
+    if (show) {
+        suggestions.classList.add('show');
+    } else {
+        // Small delay to allow click event on suggestions
+        setTimeout(() => {
+            suggestions.classList.remove('show');
+        }, 150);
+    }
+}
+
+function selectSubject(name) {
+    const input = document.getElementById('subject_input');
+    input.value = name;
+    input.focus();
+}
+
+// Add event listeners when document loads
+document.addEventListener('DOMContentLoaded', function() {
+    const subjectInput = document.getElementById('subject_input');
+    const suggestions = document.getElementById('subject_suggestions');
+    
+    // Show suggestions when input is focused
+    subjectInput.addEventListener('focus', () => {
+        toggleSubjectSuggestions(true);
+    });
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        const isDeleteButton = e.target.closest('.delete-btn');
+        if (!subjectInput.contains(e.target) && !suggestions.contains(e.target) && !isDeleteButton) {
+            toggleSubjectSuggestions(false);
+        }
+    });
+    
+    // Filter suggestions as user types
+    subjectInput.addEventListener('input', function(e) {
+        const value = e.target.value.toLowerCase();
+        const suggestionItems = document.querySelectorAll('.suggestion-item');
+        
+        suggestionItems.forEach(item => {
+            const text = item.querySelector('.subject-name').textContent.toLowerCase();
+            if (text.includes(value)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Show dropdown if there are matching items
+        if (value.length > 0) {
+            toggleSubjectSuggestions(true);
+        }
+    });
+    
+    // Handle suggestion clicks
+    suggestions.addEventListener('click', (e) => {
+        const item = e.target.closest('.suggestion-item');
+        if (item && !e.target.closest('.delete-btn')) {
+            const name = item.querySelector('.subject-name').textContent.trim();
+            selectSubject(name);
+            toggleSubjectSuggestions(false);
+        }
+    });
+});
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
